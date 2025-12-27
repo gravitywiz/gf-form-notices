@@ -1,0 +1,13 @@
+/**
+ * GF Form Notices Feed Settings Styles
+ */
+
+/* Date field container width */
+.gform-settings-field__date_time .gform-settings-input__container {
+    width: 50%;
+}
+
+/* Date input field width */
+.gform-settings-field__date_time .gform-settings-input__container input[type="text"] {
+    width: 100%;
+}

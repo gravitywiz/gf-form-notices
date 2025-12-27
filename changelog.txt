@@ -1,0 +1,5 @@
+# Changelog
+
+## 1.0 | December 26, 2025
+
+- Hello world!
