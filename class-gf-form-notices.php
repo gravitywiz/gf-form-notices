@@ -21,6 +21,14 @@ class GF_Form_Notices extends GFFeedAddOn {
 	protected $_full_path = __FILE__;
 	protected $_title = 'Form Notices';
 	protected $_short_title = 'Form Notices';
+	protected $_capabilities_settings_page = 'gf_form_notices_settings';
+	protected $_capabilities_form_settings = 'gf_form_notices_form_settings';
+	protected $_capabilities_uninstall = 'gf_form_notices_uninstall';
+	protected $_capabilities = array(
+		'gf_form_notices_settings',
+		'gf_form_notices_form_settings',
+		'gf_form_notices_uninstall',
+	);
 	protected $_supports_feed_ordering = true;
 
 	/**
