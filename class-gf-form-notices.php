@@ -64,6 +64,9 @@ class GF_Form_Notices extends GFFeedAddOn {
 		add_action( 'wp_ajax_gf_form_notices_preview_date', array( $this, 'ajax_preview_date' ) );
 		add_action( 'gform_enqueue_scripts', array( $this, 'enqueue_frontend_styles' ), 10, 2 );
 		
+		// Register shortcode
+		add_shortcode( 'form_notices', array( $this, 'shortcode_handler' ) );
+		
 		// Export/Import support
 		add_filter( 'gform_export_form', array( $this, 'export_feeds' ) );
 		add_action( 'gform_forms_post_import', array( $this, 'import_feeds' ) );
@@ -221,6 +224,86 @@ class GF_Form_Notices extends GFFeedAddOn {
 		}
 
 		return $html;
+	}
+
+	/**
+	 * Shortcode handler for [form_notices] shortcode.
+	 * 
+	 * @param array $atts Shortcode attributes.
+	 * 
+	 * @return string The notices HTML or empty string if no notices.
+	 */
+	public function shortcode_handler( $atts ) {
+		$atts = shortcode_atts(
+			array(
+				'form_id' => '',
+			),
+			$atts,
+			'form_notices'
+		);
+
+		// Validate form ID
+		$form_id = absint( $atts['form_id'] );
+		if ( empty( $form_id ) ) {
+			return '';
+		}
+
+		$form = GFAPI::get_form( $form_id );
+		if ( ! $form ) {
+			return '';
+		}
+
+		// Get active feeds for this form
+		$feeds = $this->get_active_feeds( $form_id );
+		if ( empty( $feeds ) ) {
+			return '';
+		}
+
+		// Enqueue frontend styles when shortcode is used
+		wp_enqueue_style(
+			'gf-form-notices-frontend',
+			$this->get_base_url() . '/css/frontend.css',
+			array(),
+			$this->_version
+		);
+
+		$timestamp = current_time( 'timestamp' );
+		$messages  = array();
+
+		foreach ( $feeds as $feed ) {
+			$start_date   = rgar( $feed['meta'], 'start_date' );
+			$end_date     = rgar( $feed['meta'], 'end_date' );
+			$message      = rgar( $feed['meta'], 'message' );
+			$advance_days = absint( rgar( $feed['meta'], 'advance_days', 0 ) );
+
+			if ( empty( $start_date ) || empty( $end_date ) || empty( $message ) ) {
+				continue;
+			}
+
+			$start_timestamp = $this->get_date_timestamp( $start_date );
+			$end_timestamp   = $this->get_date_timestamp( $end_date, false );
+
+			// Subtract advance days from start timestamp
+			$display_start_timestamp = strtotime( '-' . $advance_days . ' days', $start_timestamp );
+
+			if ( $timestamp >= $display_start_timestamp && $timestamp <= $end_timestamp ) {
+				$messages[] = array(
+					'content'                => $this->replace_date_merge_tags( $message, array(
+						'start_date' => $start_date,
+						'end_date'   => $end_date,
+					) ),
+					'disable_default_styles' => (bool) rgar( $feed['meta'], 'disable_default_styles' ),
+					'feed_id'                => rgar( $feed, 'id' ),
+					'feed_name'              => rgar( $feed['meta'], 'feed_name' ),
+				);
+			}
+		}
+
+		if ( ! empty( $messages ) ) {
+			return $this->format_messages( $messages, $form );
+		}
+
+		return '';
 	}
 
 	/**
