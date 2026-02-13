@@ -65,7 +65,7 @@ class GF_Form_Notices extends GFFeedAddOn {
 		add_action( 'gform_enqueue_scripts', array( $this, 'enqueue_frontend_styles' ), 10, 2 );
 		
 		// Register shortcode
-		add_shortcode( 'form_notices', array( $this, 'shortcode_handler' ) );
+		add_shortcode( 'gffn_notices', array( $this, 'shortcode_handler' ) );
 		
 		// Export/Import support
 		add_filter( 'gform_export_form', array( $this, 'export_feeds' ) );
@@ -94,7 +94,42 @@ class GF_Form_Notices extends GFFeedAddOn {
 					),
 				),
 			),
+			array(
+				'title'  => __( 'Shortcode', 'gf-form-notices' ),
+				'fields' => array(
+					array(
+						'name' => 'shortcode_usage',
+						'type' => 'gffn_shortcode_usage',
+					),
+				),
+			),
 		);
+	}
+
+	/**
+	 * Render shortcode usage field.
+	 *
+	 * @param array $field The field properties.
+	 * @param bool  $echo  Whether to echo the field HTML.
+	 *
+	 * @return string
+	 */
+	public function settings_gffn_shortcode_usage( $field, $echo = true ) {
+		ob_start();
+		?>
+		<p><?php esc_html_e( 'Use this shortcode to display applicable notices (based on their date range) anywhere on your site:', 'gf-form-notices' ); ?></p>
+		<code style="display: block; padding: 10px; background: #f0f0f1; margin-bottom: 10px;">[gffn_notices form_id="123"]</code>
+		<p><?php printf( esc_html__( 'To display a specific notice (if applicable), add the %s attribute:', 'gf-form-notices' ), '<code>notice_id</code>' ); ?></p>
+		<code style="display: block; padding: 10px; background: #f0f0f1;">[gffn_notices form_id="123" notice_id="456"]</code>
+		<p class="description" style="margin-top: 10px;"><?php esc_html_e( 'Replace 123 with your form ID and 456 with the notice (feed) ID.', 'gf-form-notices' ); ?></p>
+		<?php
+		$html = ob_get_clean();
+
+		if ( $echo ) {
+			echo $html;
+		}
+
+		return $html;
 	}
 
 	/**
