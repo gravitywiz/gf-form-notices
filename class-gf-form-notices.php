@@ -236,7 +236,8 @@ class GF_Form_Notices extends GFFeedAddOn {
 	public function shortcode_handler( $atts ) {
 		$atts = shortcode_atts(
 			array(
-				'form_id' => '',
+				'form_id'   => '',
+				'notice_id' => '',
 			),
 			$atts,
 			'form_notices'
@@ -248,6 +249,9 @@ class GF_Form_Notices extends GFFeedAddOn {
 			return '';
 		}
 
+		// Validate notice ID (optional)
+		$notice_id = $atts['notice_id'] ? absint( $atts['notice_id'] ) : '';
+
 		$form = GFAPI::get_form( $form_id );
 		if ( ! $form ) {
 			return '';
@@ -257,6 +261,17 @@ class GF_Form_Notices extends GFFeedAddOn {
 		$feeds = $this->get_active_feeds( $form_id );
 		if ( empty( $feeds ) ) {
 			return '';
+		}
+
+		// Filter by specific notice_id if provided
+		if ( $notice_id ) {
+			$feeds = array_filter( $feeds, function( $feed ) use ( $notice_id ) {
+				return absint( rgar( $feed, 'id' ) ) === $notice_id;
+			});
+
+			if ( empty( $feeds ) ) {
+				return '';
+			}
 		}
 
 		// Enqueue frontend styles when shortcode is used
