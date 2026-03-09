@@ -206,6 +206,53 @@ class GF_Form_Notices extends GFFeedAddOn {
 	}
 
 	/**
+	 * Get active notice messages for a given set of feeds.
+	 *
+	 * @param array $feeds The feeds array.
+	 *
+	 * @return array Array of message data.
+	 */
+	private function get_active_notice_messages( $feeds ) {
+		if ( empty( $feeds ) ) {
+			return array();
+		}
+
+		$timestamp = current_time( 'timestamp' );
+		$messages  = array();
+
+		foreach ( $feeds as $feed ) {
+			$start_date   = rgar( $feed['meta'], 'start_date' );
+			$end_date     = rgar( $feed['meta'], 'end_date' );
+			$message      = rgar( $feed['meta'], 'message' );
+			$advance_days = absint( rgar( $feed['meta'], 'advance_days', 0 ) );
+
+			if ( empty( $start_date ) || empty( $end_date ) || empty( $message ) ) {
+				continue;
+			}
+
+			$start_timestamp = $this->get_date_timestamp( $start_date );
+			$end_timestamp   = $this->get_date_timestamp( $end_date, false );
+			
+			// Subtract advance days from start timestamp
+			$display_start_timestamp = strtotime( '-' . $advance_days . ' days', $start_timestamp );
+
+			if ( $timestamp >= $display_start_timestamp && $timestamp <= $end_timestamp ) {
+				$messages[] = array(
+					'content'                => $this->replace_date_merge_tags( $message, array(
+						'start_date' => $start_date,
+						'end_date'   => $end_date,
+					) ),
+					'disable_default_styles' => (bool) rgar( $feed['meta'], 'disable_default_styles' ),
+					'feed_id'                => rgar( $feed, 'id' ),
+					'feed_name'              => rgar( $feed['meta'], 'feed_name' ),
+				);
+			}
+		}
+
+		return $messages;
+	}
+
+	/**
 	 * Handle displaying notice messages on forms.
 	 *
 	 * @param string $html The form HTML.
@@ -216,42 +263,7 @@ class GF_Form_Notices extends GFFeedAddOn {
 	public function handle_notice_messages( $html, $form ) {
 		if ( ! $this->is_form_editor() && ! is_admin() ) {
 			$feeds = $this->get_active_feeds( $form['id'] );
-
-			if ( empty( $feeds ) ) {
-				return $html;
-			}
-
-			$timestamp = current_time( 'timestamp' );
-			$messages  = array();
-
-			foreach ( $feeds as $feed ) {
-				$start_date   = rgar( $feed['meta'], 'start_date' );
-				$end_date     = rgar( $feed['meta'], 'end_date' );
-				$message      = rgar( $feed['meta'], 'message' );
-				$advance_days = absint( rgar( $feed['meta'], 'advance_days', 0 ) );
-
-				if ( empty( $start_date ) || empty( $end_date ) || empty( $message ) ) {
-					continue;
-				}
-
-				$start_timestamp = $this->get_date_timestamp( $start_date );
-				$end_timestamp   = $this->get_date_timestamp( $end_date, false );
-				
-				// Subtract advance days from start timestamp
-				$display_start_timestamp = strtotime( '-' . $advance_days . ' days', $start_timestamp );
-
-				if ( $timestamp >= $display_start_timestamp && $timestamp <= $end_timestamp ) {
-					$messages[] = array(
-						'content'                => $this->replace_date_merge_tags( $message, array(
-							'start_date' => $start_date,
-							'end_date'   => $end_date,
-						) ),
-						'disable_default_styles' => (bool) rgar( $feed['meta'], 'disable_default_styles' ),
-						'feed_id'                => rgar( $feed, 'id' ),
-						'feed_name'              => rgar( $feed['meta'], 'feed_name' ),
-					);
-				}
-			}
+			$messages = $this->get_active_notice_messages( $feeds );
 
 			if ( ! empty( $messages ) ) {
 				$html = $this->format_messages( $messages, $form ) . $html;
@@ -317,37 +329,7 @@ class GF_Form_Notices extends GFFeedAddOn {
 			$this->_version
 		);
 
-		$timestamp = current_time( 'timestamp' );
-		$messages  = array();
-
-		foreach ( $feeds as $feed ) {
-			$start_date   = rgar( $feed['meta'], 'start_date' );
-			$end_date     = rgar( $feed['meta'], 'end_date' );
-			$message      = rgar( $feed['meta'], 'message' );
-			$advance_days = absint( rgar( $feed['meta'], 'advance_days', 0 ) );
-
-			if ( empty( $start_date ) || empty( $end_date ) || empty( $message ) ) {
-				continue;
-			}
-
-			$start_timestamp = $this->get_date_timestamp( $start_date );
-			$end_timestamp   = $this->get_date_timestamp( $end_date, false );
-
-			// Subtract advance days from start timestamp
-			$display_start_timestamp = strtotime( '-' . $advance_days . ' days', $start_timestamp );
-
-			if ( $timestamp >= $display_start_timestamp && $timestamp <= $end_timestamp ) {
-				$messages[] = array(
-					'content'                => $this->replace_date_merge_tags( $message, array(
-						'start_date' => $start_date,
-						'end_date'   => $end_date,
-					) ),
-					'disable_default_styles' => (bool) rgar( $feed['meta'], 'disable_default_styles' ),
-					'feed_id'                => rgar( $feed, 'id' ),
-					'feed_name'              => rgar( $feed['meta'], 'feed_name' ),
-				);
-			}
-		}
+		$messages = $this->get_active_notice_messages( $feeds );
 
 		if ( ! empty( $messages ) ) {
 			return $this->format_messages( $messages, $form );
