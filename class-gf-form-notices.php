@@ -64,6 +64,9 @@ class GF_Form_Notices extends GFFeedAddOn {
 		add_action( 'wp_ajax_gf_form_notices_preview_date', array( $this, 'ajax_preview_date' ) );
 		add_action( 'gform_enqueue_scripts', array( $this, 'enqueue_frontend_styles' ), 10, 2 );
 		
+		// Register shortcode
+		add_shortcode( 'gffn_notices', array( $this, 'shortcode_handler' ) );
+		
 		// Export/Import support
 		add_filter( 'gform_export_form', array( $this, 'export_feeds' ) );
 		add_action( 'gform_forms_post_import', array( $this, 'import_feeds' ) );
@@ -91,7 +94,42 @@ class GF_Form_Notices extends GFFeedAddOn {
 					),
 				),
 			),
+			array(
+				'title'  => __( 'Shortcode', 'gf-form-notices' ),
+				'fields' => array(
+					array(
+						'name' => 'shortcode_usage',
+						'type' => 'gffn_shortcode_usage',
+					),
+				),
+			),
 		);
+	}
+
+	/**
+	 * Render shortcode usage field.
+	 *
+	 * @param array $field The field properties.
+	 * @param bool  $echo  Whether to echo the field HTML.
+	 *
+	 * @return string
+	 */
+	public function settings_gffn_shortcode_usage( $field, $echo = true ) {
+		ob_start();
+		?>
+		<p><?php esc_html_e( 'Use this shortcode to display applicable notices (based on their date range) anywhere on your site:', 'gf-form-notices' ); ?></p>
+		<code style="display: block; padding: 10px; background: #f0f0f1; margin-bottom: 10px;">[gffn_notices form_id="123"]</code>
+		<p><?php printf( esc_html__( 'To display a specific notice (if applicable), add the %s attribute:', 'gf-form-notices' ), '<code>notice_id</code>' ); ?></p>
+		<code style="display: block; padding: 10px; background: #f0f0f1;">[gffn_notices form_id="123" notice_id="456"]</code>
+		<p class="description" style="margin-top: 10px;"><?php esc_html_e( 'Replace 123 with your form ID and 456 with the notice (feed) ID.', 'gf-form-notices' ); ?></p>
+		<?php
+		$html = ob_get_clean();
+
+		if ( $echo ) {
+			echo $html;
+		}
+
+		return $html;
 	}
 
 	/**
@@ -168,6 +206,53 @@ class GF_Form_Notices extends GFFeedAddOn {
 	}
 
 	/**
+	 * Get active notice messages for a given set of feeds.
+	 *
+	 * @param array $feeds The feeds array.
+	 *
+	 * @return array Array of message data.
+	 */
+	private function get_active_notice_messages( $feeds ) {
+		if ( empty( $feeds ) ) {
+			return array();
+		}
+
+		$timestamp = current_time( 'timestamp' );
+		$messages  = array();
+
+		foreach ( $feeds as $feed ) {
+			$start_date   = rgar( $feed['meta'], 'start_date' );
+			$end_date     = rgar( $feed['meta'], 'end_date' );
+			$message      = rgar( $feed['meta'], 'message' );
+			$advance_days = absint( rgar( $feed['meta'], 'advance_days', 0 ) );
+
+			if ( empty( $start_date ) || empty( $end_date ) || empty( $message ) ) {
+				continue;
+			}
+
+			$start_timestamp = $this->get_date_timestamp( $start_date );
+			$end_timestamp   = $this->get_date_timestamp( $end_date, false );
+			
+			// Subtract advance days from start timestamp
+			$display_start_timestamp = strtotime( '-' . $advance_days . ' days', $start_timestamp );
+
+			if ( $timestamp >= $display_start_timestamp && $timestamp <= $end_timestamp ) {
+				$messages[] = array(
+					'content'                => $this->replace_date_merge_tags( $message, array(
+						'start_date' => $start_date,
+						'end_date'   => $end_date,
+					) ),
+					'disable_default_styles' => (bool) rgar( $feed['meta'], 'disable_default_styles' ),
+					'feed_id'                => rgar( $feed, 'id' ),
+					'feed_name'              => rgar( $feed['meta'], 'feed_name' ),
+				);
+			}
+		}
+
+		return $messages;
+	}
+
+	/**
 	 * Handle displaying notice messages on forms.
 	 *
 	 * @param string $html The form HTML.
@@ -178,42 +263,7 @@ class GF_Form_Notices extends GFFeedAddOn {
 	public function handle_notice_messages( $html, $form ) {
 		if ( ! $this->is_form_editor() && ! is_admin() ) {
 			$feeds = $this->get_active_feeds( $form['id'] );
-
-			if ( empty( $feeds ) ) {
-				return $html;
-			}
-
-			$timestamp = current_time( 'timestamp' );
-			$messages  = array();
-
-			foreach ( $feeds as $feed ) {
-				$start_date   = rgar( $feed['meta'], 'start_date' );
-				$end_date     = rgar( $feed['meta'], 'end_date' );
-				$message      = rgar( $feed['meta'], 'message' );
-				$advance_days = absint( rgar( $feed['meta'], 'advance_days', 0 ) );
-
-				if ( empty( $start_date ) || empty( $end_date ) || empty( $message ) ) {
-					continue;
-				}
-
-				$start_timestamp = $this->get_date_timestamp( $start_date );
-				$end_timestamp   = $this->get_date_timestamp( $end_date, false );
-				
-				// Subtract advance days from start timestamp
-				$display_start_timestamp = strtotime( '-' . $advance_days . ' days', $start_timestamp );
-
-				if ( $timestamp >= $display_start_timestamp && $timestamp <= $end_timestamp ) {
-					$messages[] = array(
-						'content'                => $this->replace_date_merge_tags( $message, array(
-							'start_date' => $start_date,
-							'end_date'   => $end_date,
-						) ),
-						'disable_default_styles' => (bool) rgar( $feed['meta'], 'disable_default_styles' ),
-						'feed_id'                => rgar( $feed, 'id' ),
-						'feed_name'              => rgar( $feed['meta'], 'feed_name' ),
-					);
-				}
-			}
+			$messages = $this->get_active_notice_messages( $feeds );
 
 			if ( ! empty( $messages ) ) {
 				$html = $this->format_messages( $messages, $form ) . $html;
@@ -221,6 +271,70 @@ class GF_Form_Notices extends GFFeedAddOn {
 		}
 
 		return $html;
+	}
+
+	/**
+	 * Shortcode handler for [form_notices] shortcode.
+	 * 
+	 * @param array $atts Shortcode attributes.
+	 * 
+	 * @return string The notices HTML or empty string if no notices.
+	 */
+	public function shortcode_handler( $atts ) {
+		$atts = shortcode_atts(
+			array(
+				'form_id'   => '',
+				'notice_id' => '',
+			),
+			$atts,
+			'form_notices'
+		);
+
+		// Validate form ID
+		$form_id = absint( $atts['form_id'] );
+		if ( empty( $form_id ) ) {
+			return '';
+		}
+
+		// Validate notice ID (optional)
+		$notice_id = $atts['notice_id'] ? absint( $atts['notice_id'] ) : '';
+
+		$form = GFAPI::get_form( $form_id );
+		if ( ! $form ) {
+			return '';
+		}
+
+		// Get active feeds for this form
+		$feeds = $this->get_active_feeds( $form_id );
+		if ( empty( $feeds ) ) {
+			return '';
+		}
+
+		// Filter by specific notice_id if provided
+		if ( $notice_id ) {
+			$feeds = array_filter( $feeds, function( $feed ) use ( $notice_id ) {
+				return absint( rgar( $feed, 'id' ) ) === $notice_id;
+			});
+
+			if ( empty( $feeds ) ) {
+				return '';
+			}
+		}
+
+		$messages = $this->get_active_notice_messages( $feeds );
+
+		if ( ! empty( $messages ) ) {
+			// Enqueue frontend styles when shortcode is used
+			wp_enqueue_style(
+				'gf-form-notices-frontend',
+				$this->get_base_url() . '/css/frontend.css',
+				array(),
+				$this->_version
+			);
+			return $this->format_messages( $messages, $form );
+		}
+
+		return '';
 	}
 
 	/**
