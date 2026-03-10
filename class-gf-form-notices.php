@@ -321,17 +321,16 @@ class GF_Form_Notices extends GFFeedAddOn {
 			}
 		}
 
-		// Enqueue frontend styles when shortcode is used
-		wp_enqueue_style(
-			'gf-form-notices-frontend',
-			$this->get_base_url() . '/css/frontend.css',
-			array(),
-			$this->_version
-		);
-
 		$messages = $this->get_active_notice_messages( $feeds );
 
 		if ( ! empty( $messages ) ) {
+			// Enqueue frontend styles when shortcode is used
+			wp_enqueue_style(
+				'gf-form-notices-frontend',
+				$this->get_base_url() . '/css/frontend.css',
+				array(),
+				$this->_version
+			);
 			return $this->format_messages( $messages, $form );
 		}
 
