@@ -3,7 +3,7 @@
  * Plugin Name: GF Form Notices
  * Plugin URI: https://gravitywiz.com
  * Description: Display scheduled messages above Gravity Forms based on date ranges. Perfect for office closings, promotions, announcements, and more.
- * Version: 1.0.1
+ * Version: 1.0.2
  * Author: Gravity Wiz
  * Author URI: https://gravitywiz.com
  * License: GPL-2.0+
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'GF_FORM_NOTICES_VERSION', '1.0.1' );
+define( 'GF_FORM_NOTICES_VERSION', '1.0.2' );
 define( 'GF_FORM_NOTICES_FILE', __FILE__ );
 define( 'GF_FORM_NOTICES_PATH', plugin_dir_path( __FILE__ ) );
 
