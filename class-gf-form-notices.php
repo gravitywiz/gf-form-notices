@@ -415,13 +415,15 @@ class GF_Form_Notices extends GFFeedAddOn {
 			return $markup;
 		}, $messages );
 		
-		// Add theme classes to inherit GF custom properties
+		// Add theme classes to inherit GF custom properties.
 		$theme_classes = '';
-		$form_theme = rgar( $form, 'theme' );
+		$form_theme    = rgar( $form, 'theme' );
 		if ( $form_theme === 'orbital' ) {
-			$theme_classes = ' gform-theme gform-theme--framework';
+			// `gform-theme--api` provides the same CSS variables without Orbital's `all: unset` reset,
+			// preserving styling for HTML elements in notice messages.
+			$theme_classes = ' gform-theme gform-theme--api';
 		}
-		
+
 		return '<div class="gffn-notices' . $theme_classes . '">' . implode( '', $formatted_messages ) . '</div>';
 	}
 
