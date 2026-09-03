@@ -634,7 +634,7 @@ class GF_Form_Notices extends GFFeedAddOn {
 				continue;
 			}
 
-			$message = str_replace( $match[0], date( $format, $this->get_date_timestamp( $date ) ), $message );
+			$message = str_replace( $match[0], date_i18n( $format, $this->get_date_timestamp( $date ) ), $message );
 		}
 		
 		// Parse merge tags for next_weekday
@@ -649,7 +649,7 @@ class GF_Form_Notices extends GFFeedAddOn {
 			}
 			
 			$next_weekday = $this->get_next_weekday( $end_date );
-			$message = str_replace( $match[0], date( $format, $next_weekday ), $message );
+			$message = str_replace( $match[0], date_i18n( $format, $next_weekday ), $message );
 		}
 
 		return $message;
