@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.3 | September 3, 2026
+
+- Fixed an issue where the Gravity Forms Orbital theme stripped styles from notices, causing HTML elements to display as plain text.
+- Fixed date merge tags not respecting the WordPress site's locale.
+
 ## 1.0.2 | March 11, 2026
 
 - Added `[gffn_notices]` shortcode for displaying notices by form ID.
