@@ -42,3 +42,10 @@ class GF_Form_Notices_Bootstrap {
 function gf_form_notices() {
 	return GF_Form_Notices::get_instance();
 }
+
+// The callbacks of the Spellbook settings descriptor; native behavior is independent of Spellbook.
+require_once __DIR__ . '/includes/spellbook-feed-descriptor.php';
+
+add_action( 'spellbook_assistant_contracts_register', static function () {
+	Spellbook_Assistant_Contracts::declare( __FILE__ );
+} );

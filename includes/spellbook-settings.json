@@ -1,0 +1,80 @@
+{
+  "descriptors": [
+    {
+      "id": "gf-form-notices",
+      "target": "feed",
+      "lifecycles": [
+        "saved"
+      ],
+      "name": "GF Form Notices",
+      "description": "Reviewed dated form notices and display settings. Wildcard and natural-language schedules remain in native settings. Global container markup and shortcode placement are not edited.",
+      "feed": {
+        "addon": "gf-form-notices",
+        "operations": [
+          "create",
+          "update",
+          "activate",
+          "deactivate",
+          "delete"
+        ]
+      },
+      "settings": {
+        "name": {
+          "label": "Notice name",
+          "schema": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x08\\x0b\\x0c\\x0e-\\x1f]*$"
+          }
+        },
+        "startDate": {
+          "label": "Start date",
+          "schema": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x08\\x0b\\x0c\\x0e-\\x1f]*$"
+          }
+        },
+        "endDate": {
+          "label": "End date",
+          "schema": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x08\\x0b\\x0c\\x0e-\\x1f]*$"
+          }
+        },
+        "advanceDays": {
+          "label": "Days shown in advance",
+          "schema": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3660
+          }
+        },
+        "message": {
+          "label": "Notice message",
+          "schema": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x08\\x0b\\x0c\\x0e-\\x1f]*$"
+          }
+        },
+        "disableDefaultStyles": {
+          "label": "Disable default styles",
+          "schema": {
+            "type": "boolean"
+          }
+        }
+      },
+      "callbacks": {
+        "read": "GFFN_Spellbook_Feed_Descriptor::read",
+        "apply": "GFFN_Spellbook_Feed_Descriptor::apply",
+        "review": "GFFN_Spellbook_Feed_Descriptor::review"
+      }
+    }
+  ]
+}
